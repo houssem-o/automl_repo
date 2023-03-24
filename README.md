@@ -3,7 +3,7 @@
 #### Installation
 1. Clone this repo
 2. Install dependencies. Python 3.9 was used, but the code should work with other versions.
-`python -m pip install -r requirements.txt`
+`cd automl_repo && python -m pip install -r requirements.txt`
 3. To generate the files used to pretrain and train the ensembles, other dependencies are needed. This is **optional**, as the data used is included in the `pretraining_data` directories. The optional installation is detailed in the last section below.
 
 #### Logs and reported results
@@ -17,8 +17,7 @@ The reported logs were obtained by running the experiments on an Apple M1 Pro CP
 **We include these logs as testing on Google Colab showed that running the full experiments took a long time, either on GPU or CPU. We are currently working on optimizations and improvements, but in our testing the pretraining procedure would take more than 3 hours on a Google Colab GPU, versus 30 minutes on the M1 Pro. As this might be too long in practice, we include these logs for the full procedure (1000 pretraining epochs), and provide code to run smaller scale experiments, which we detail in the following section.**
 
 #### Code
-Here, we provide the commands to run the experiments.
-Run `cd automl_repo` once before these commands.
+Here, we provide the commands to run the experiments. These should be run from inside the `automl_repo` folder.
 ##### MLP experiments
 `python -m experiments.nasbench_201.run_search
        [--experiment-name EXPERIMENT_NAME]
