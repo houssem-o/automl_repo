@@ -129,16 +129,8 @@ class Ensemble:
 
         self.pretrain_modules = [mod.to(torch.device('cpu')) for mod in self.pretrain_modules]
 
-        # Restore self.networks and self.optimizers
-        self.networks = [
-            nn.Sequential(module.get_submodule('encoder'), nn.Linear(self.embedding_dim, 1))
-            for module in self.pretrain_modules
-        ]
-        self.optimizers = [torch.optim.Adam(net.parameters(), lr=self.pretrain_lr) for net in self.networks]
-
 
     def pretrain(self):
-        print(self.accelerator, self.devices)
         if self.accelerator == 'cpu':
             self.pretrain_cpu()
         elif self.accelerator == 'gpu':

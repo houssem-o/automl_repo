@@ -56,7 +56,48 @@ class EnsemblePyG():
         self.pretrain_optimizers = [torch.optim.Adam(module.parameters(), lr=self.pretrain_lr) for module in
                                     self.pretrain_modules]
 
+    def pretrain_gpu(self):
+        train_loader = PyG_DataLoader(self.pretrain_metrics_pyg_list, batch_size=self.pretrain_bs, shuffle=True, num_workers=0)
+
+        device = torch.device('cuda')
+
+        class PretrainEnsemble(nn.Module):
+            def __init__(self, modules):
+                super(PretrainEnsemble, self).__init__()
+                self.module_lst = nn.ModuleList(modules)
+            def forward(self, x, edge_index, batch_index, vector):
+                return [mod(x, edge_index, batch_index, vector) for mod in self.module_lst]
+
+        module = PretrainEnsemble(self.pretrain_modules).to(device)
+        optimizer = torch.optim.Adam(module.parameters(), lr=self.pretrain_lr)
+
+        for _ in tqdm(range(self.pretrain_epochs)):
+            for batch_idx, batch in enumerate(train_loader):
+                optimizer.zero_grad()
+                batch_ = batch.to(device)
+                preds_lst = module(batch_.x.float(), batch_.edge_index, batch_.batch, batch_.vector)
+                loss = 0
+                for module_idx, preds in enumerate(preds_lst):
+                    for obj_pred, obj_target in zip(preds, batch.y):
+                        loss += nn.functional.huber_loss(input=obj_pred.to(device), target=obj_target.to(device).view(obj_pred.shape))
+                loss.backward()
+                optimizer.step()
+
+        self.pretrain_modules = [mod.to(torch.device('cpu')) for mod in self.pretrain_modules]
+
     def pretrain(self):
+        if self.accelerator == 'cpu':
+            self.pretrain_cpu()
+        elif self.accelerator == 'gpu':
+            self.pretrain_gpu()
+        # Restore self.networks and self.optimizers
+        self.networks = [
+            PredictionHeadPyG(module.get_submodule('encoder'), self.embedding_dim)
+            for module in self.pretrain_modules
+        ]
+        self.optimizers = [torch.optim.Adam(net.parameters(), lr=self.pretrain_lr) for net in self.networks]
+
+    def pretrain_cpu(self):
         train_loader = PyG_DataLoader(self.pretrain_metrics_pyg_list, batch_size=self.pretrain_bs, shuffle=True, num_workers=0)
 
         def pretrain_epoch(module, optimizer):
@@ -85,12 +126,6 @@ class EnsemblePyG():
                     self.pretrain_modules.append(module)
                     self.pretrain_optimizers.append(optimizer)
 
-        # Restore self.networks and self.optimizers
-        self.networks = [
-            PredictionHeadPyG(module.get_submodule('encoder'), self.embedding_dim)
-            for module in self.pretrain_modules
-        ]
-        self.optimizers = [torch.optim.Adam(net.parameters(), lr=self.pretrain_lr) for net in self.networks]
 
     def train(self, pyg_data_list, epochs, bs=16):
         train_loader = PyG_DataLoader(pyg_data_list, shuffle=True, batch_size=bs)
