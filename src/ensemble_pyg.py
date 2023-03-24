@@ -159,7 +159,7 @@ class EnsemblePyG():
         device = torch.device('cuda')
 
         module = TrainEnsemble(self.networks).to(device)
-        optimizer = torch.optim.Adam(module.parameters, lr=self.train_lr)
+        optimizer = torch.optim.Adam(module.parameters(), lr=self.train_lr)
 
         for _ in tqdm(range(self.pretrain_epochs)):
             for batch_idx, batch in enumerate(train_loader):
