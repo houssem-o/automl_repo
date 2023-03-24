@@ -13,6 +13,7 @@ from torch_geometric.data import Data as PyG_Data
 from src.ensemble_pyg import EnsemblePyG
 from src.search_pyg import BenchSearchPyG
 from src.logs_utils import plot_average_logs_multiple_experiments
+from src.explore_logs import *
 
 embedding_dim = 512
 
@@ -148,6 +149,11 @@ def get_average_index_optimum_reached(lst):
     return np.mean(clean_list), n_fails
 
 
+def create_dir_if_not_existing(path):
+    if not exists(path):
+        mkdir(path)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--experiment-name', type=str, default='nb201_pretrained_gcn')
@@ -159,6 +165,8 @@ if __name__ == '__main__':
     parser.add_argument('--pretrain-epochs', type=int, default=1000)
     parser.add_argument('--datasets', type=str, nargs='+', default=['cifar10'])
     args = parser.parse_args()
+
+    create_dir_if_not_existing('logs')
 
     pretrain_epochs, total_evals, accel, threads, xp_name = args.pretrain_epochs, args.total_evals, args.accelerator, args.threads, args.experiment_name
     n_runs, pretrain, datasets = args.runs, args.pretraining, args.datasets
