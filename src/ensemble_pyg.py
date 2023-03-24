@@ -30,6 +30,13 @@ class PredictionHeadPyG(nn.Module):
     def forward(self, x, edge_index, batch_index, vector):
         return self.head(self.net(x, edge_index, batch_index, vector))
 
+class TrainEnsemble(nn.Module):
+    def __init__(self, modules):
+        super(TrainEnsemble, self).__init__()
+        self.module_lst = nn.ModuleList(modules)
+    def forward(self, x, edge_index, batch_index, vector):
+        return [mod(x, edge_index, batch_index, vector) for mod in self.module_lst]
+
 
 class EnsemblePyG():
     def __init__(self, pretrain_metrics_pyg_list, n_pretrain_metrics,
@@ -61,14 +68,7 @@ class EnsemblePyG():
 
         device = torch.device('cuda')
 
-        class PretrainEnsemble(nn.Module):
-            def __init__(self, modules):
-                super(PretrainEnsemble, self).__init__()
-                self.module_lst = nn.ModuleList(modules)
-            def forward(self, x, edge_index, batch_index, vector):
-                return [mod(x, edge_index, batch_index, vector) for mod in self.module_lst]
-
-        module = PretrainEnsemble(self.pretrain_modules).to(device)
+        module = TrainEnsemble(self.pretrain_modules).to(device)
         optimizer = torch.optim.Adam(module.parameters(), lr=self.pretrain_lr)
 
         for _ in tqdm(range(self.pretrain_epochs)):
@@ -127,7 +127,7 @@ class EnsemblePyG():
                     self.pretrain_optimizers.append(optimizer)
 
 
-    def train(self, pyg_data_list, epochs, bs=16):
+    def train_cpu(self, pyg_data_list, epochs, bs=16):
         train_loader = PyG_DataLoader(pyg_data_list, shuffle=True, batch_size=bs)
 
         def train_epoch(net, optimizer):
@@ -152,4 +152,55 @@ class EnsemblePyG():
                 for (net, optimizer) in res:
                     self.networks.append(net)
                     self.optimizers.append(optimizer)
+
+    def train_gpu(self, pyg_data_list, epochs, bs=16):
+        train_loader = PyG_DataLoader(pyg_data_list, shuffle=True, batch_size=bs)
+
+        device = torch.device('cuda')
+
+        module = TrainEnsemble(self.networks).to(device)
+        optimizer = torch.optim.Adam(module.parameters, lr=self.train_lr)
+
+        for _ in tqdm(range(self.pretrain_epochs)):
+            for batch_idx, batch in enumerate(train_loader):
+                optimizer.zero_grad()
+                batch_ = batch.to(device)
+                preds_lst = module(batch_.x.float(), batch_.edge_index, batch_.batch, batch_.vector)
+                loss = 0
+                for module_idx, preds in enumerate(preds_lst):
+                    loss += nn.functional.huber_loss(input=preds.to(device), target=batch.y[0].to(device).view(preds.shape))
+                loss.backward()
+                optimizer.step()
+
+        self.networks = [mod.to(torch.device('cpu')) for mod in self.networks]
+
+    def train(self, pyg_data_list, epochs, bs=16):
+        if self.accelerator == 'cpu':
+            self.train_cpu(self, pyg_data_list, epochs, bs=16)
+        elif self.accelerator == 'gpu':
+            self.train_gpu(self, pyg_data_list, epochs, bs=16):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
