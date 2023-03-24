@@ -176,9 +176,9 @@ class EnsemblePyG():
 
     def train(self, pyg_data_list, epochs, bs=16):
         if self.accelerator == 'cpu':
-            self.train_cpu(self, pyg_data_list, epochs, bs=16)
+            self.train_cpu(pyg_data_list, epochs, bs)
         elif self.accelerator == 'gpu':
-            self.train_gpu(self, pyg_data_list, epochs, bs=16)
+            self.train_gpu(pyg_data_list, epochs, bs)
 
 
 
