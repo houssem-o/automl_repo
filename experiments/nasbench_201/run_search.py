@@ -104,6 +104,8 @@ if __name__ == '__main__':
     parser.add_argument('--datasets', type=str, nargs='+', default=['cifar10', 'cifar100', 'ImageNet16-120'])
     args = parser.parse_args()
 
+    create_dir_if_not_existing('logs')
+
     pretrain_epochs, total_evals, accel, threads, xp_name = args.pretrain_epochs, args.total_evals, args.accelerator, args.threads, args.experiment_name
     n_runs, pretrain, datasets = args.runs, args.pretraining, args.datasets
 

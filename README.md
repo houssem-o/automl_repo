@@ -42,9 +42,7 @@ On the M1 Pro, we set the accelerator to CPU:
 A summary will be diplayed at the end of the experiment, and the logs will be saved in the `logs` folder.
 
 ##### GCN experiments
-X
-
-The same applies to the GCN experiments. For a small-scale experiment, which takes about **(((((((??)))))))** (3 runs, CIFAR10 only, 50 pretraining epochs, and a maximum of 512 evaluations), run the following:
+The same applies to the GCN experiments. For a small-scale experiment, which takes about 2 hours (3 runs, CIFAR10 only, 50 pretraining epochs, and a maximum of 512 evaluations), run the following:
 `python -m experiments.gcn.run_search --accelerator gpu --datasets cifar10 --pretraining True --runs 3 --pretrain-epochs 50 --total-evals 512`
 
 The full experiment takes about 90 minutes per run per dataset on the M1 Pro. The following command runs it (10 runs, CIFAR10 & CIFAR100 datasets, 1000 pretraining epochs, 1024 evaluations):

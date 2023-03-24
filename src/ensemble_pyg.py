@@ -161,7 +161,7 @@ class EnsemblePyG():
         module = TrainEnsemble(self.networks).to(device)
         optimizer = torch.optim.Adam(module.parameters(), lr=self.train_lr)
 
-        for _ in tqdm(range(epochs)):
+        for _ in range(epochs):
             for batch_idx, batch in enumerate(train_loader):
                 optimizer.zero_grad()
                 batch_ = batch.to(device)
