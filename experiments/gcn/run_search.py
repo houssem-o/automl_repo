@@ -83,7 +83,7 @@ def encoder_generator_func_():
     return GCN()
 
 
-def one_runone_run(pretrain_epochs, total_evals, accel, threads, run_name, evals_filename, metrics_filename, bench_optimum, pretrain=True, plot_logs=True)
+def one_run(pretrain_epochs, total_evals, accel, threads, run_name, evals_filename, metrics_filename, bench_optimum, pretrain=True, plot_logs=True):
     # Ensemble instance and pretraining
     with open(metrics_filename, 'rb') as f:
         encodings, metrics = pickle.load(f)
